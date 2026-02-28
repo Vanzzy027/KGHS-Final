@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerraNurture Greenhouse Controller</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #2c3e50; }
+        .sensor { display: inline-block; margin: 10px; padding: 15px; background: #ecf0f1; border-radius: 5px; }
+        .config { margin: 20px 0; padding: 15px; background: #d5dbdb; border-radius: 5px; }
+        label { display: inline-block; width: 150px; }
+        input { width: 80px; padding: 5px; margin: 5px; }
+        button { padding: 8px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2ecc71; }
+        .status { margin-top: 20px; font-style: italic; }
+        .actuator { display: inline-block; margin: 10px; padding: 10px; background: #f9e79f; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 TerraNurture Greenhouse</h1>
+        <div id="login" style="display:none;">
+            <h2>Login</h2>
+            <input type="email" id="email" placeholder="Email" /><br/>
+            <input type="password" id="password" placeholder="Password" /><br/>
+            <button onclick="login()">Login</button>
+        </div>
+        <div id="dashboard" style="display:none;">
+            <h2>Live Sensors</h2>
+            <div class="sensor">🌡️ Temperature: <span id="temp">--</span> °C</div>
+            <div class="sensor">💧 Humidity: <span id="hum">--</span> %</div>
+            <div class="sensor">💦 Moisture: <span id="moist">--</span> %</div>
+
+            <h2>Actuators</h2>
+            <div class="actuator">💧 Pump: <span id="pump">--</span></div>
+            <div class="actuator">🌀 Fan: <span id="fan">--</span></div>
+            <div class="actuator">💡 Lights: <span id="lights">--</span></div>
+            <div class="actuator">🌫️ Humidifier: <span id="humidifier">--</span></div>
+
+            <h2>Configuration</h2>
+            <div class="config">
+                <label>Fan ON ></label> <input type="number" id="temp_high" step="0.1" /> °C<br/>
+                <label>Lights ON <</label> <input type="number" id="temp_low" step="0.1" /> °C<br/>
+                <label>Humidifier ON <</label> <input type="number" id="hum_low" step="0.1" /> %<br/>
+                <label>Humidifier OFF ></label> <input type="number" id="hum_high" step="0.1" /> %<br/>
+                <label>Pump ON <</label> <input type="number" id="moisture_dry" step="0.1" /> %<br/>
+                <label>Pump OFF ></label> <input type="number" id="moisture_target" step="0.1" /> %<br/>
+                <button onclick="saveConfig()">Save Config</button>
+            </div>
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Your Firebase configuration (replace with yours)
+        const firebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Check login state
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                startListening();
+            } else {
+                document.getElementById('login').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+            }
+        });
+
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, password).catch(e => alert(e.message));
+        }
+
+        function startListening() {
+            // Listen to state changes
+            const stateRef = db.ref('/greenhouse/state');
+            stateRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById('temp').innerText = (data.sensors?.temperature ?? '--').toFixed(1);
+                    document.getElementById('hum').innerText = (data.sensors?.humidity ?? '--').toFixed(1);
+                    document.getElementById('moist').innerText = (data.sensors?.moisture ?? '--').toFixed(1);
+                    document.getElementById('pump').innerText = data.actuators?.pump ? 'ON' : 'OFF';
+                    document.getElementById('fan').innerText = data.actuators?.fan ? 'ON' : 'OFF';
+                    document.getElementById('lights').innerText = data.actuators?.lights ? 'ON' : 'OFF';
+                    document.getElementById('humidifier').innerText = data.actuators?.humidifier ? 'ON' : 'OFF';
+                }
+            });
+
+            // Listen to config changes
+            const configRef = db.ref('/greenhouse/config');
+            configRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById('temp_high').value = data.temp_high ?? '';
+                    document.getElementById('temp_low').value = data.temp_low ?? '';
+                    document.getElementById('hum_low').value = data.hum_low ?? '';
+                    document.getElementById('hum_high').value = data.hum_high ?? '';
+                    document.getElementById('moisture_dry').value = data.moisture_dry ?? '';
+                    document.getElementById('moisture_target').value = data.moisture_target ?? '';
+                }
+            });
+        }
+
+        function saveConfig() {
+            const config = {
+                temp_high: parseFloat(document.getElementById('temp_high').value),
+                temp_low: parseFloat(document.getElementById('temp_low').value),
+                hum_low: parseFloat(document.getElementById('hum_low').value),
+                hum_high: parseFloat(document.getElementById('hum_high').value),
+                moisture_dry: parseFloat(document.getElementById('moisture_dry').value),
+                moisture_target: parseFloat(document.getElementById('moisture_target').value),
+            };
+            db.ref('/greenhouse/config').set(config)
+                .then(() => document.getElementById('status').innerText = 'Config saved!')
+                .catch(err => document.getElementById('status').innerText = 'Error: ' + err.message);
+        }
+    </script>
+</body>
+</html>
