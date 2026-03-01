@@ -192,8 +192,10 @@ greenhouse/
 
 # 👨‍💻 Author
 
-**S.E Evans**
+**S.E Evans** <br><br>
+
 Embedded Systems & Environmental Automation Development
 
 ---
+
 
