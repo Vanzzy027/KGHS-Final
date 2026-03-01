@@ -68,10 +68,10 @@ HIGH = OFF
 #include "addons/RTDBHelper.h"
 
 // ================== FIREBASE CONFIG ==================
-#define FIREBASE_API_KEY "AIzaSyDkOGxnbZA3ycNAipihN0NXo8zR4Nksh7I"               // Your API key
-#define FIREBASE_DATABASE_URL "https://kghs-7599e-default-rtdb.firebaseio.com/"  // Your RTDB URL
-#define USER_EMAIL "kangarugirls@gmail.com"  // Firebase Auth email
-#define USER_PASSWORD "KGHS@2026"            // Firebase Auth password
+#define FIREBASE_API_KEY "................................."               // Your API key
+#define FIREBASE_DATABASE_URL "................................."  // Your RTDB URL
+#define USER_EMAIL "................................."  // Firebase Auth email
+#define USER_PASSWORD "................................."            // Firebase Auth password
 
 // ================== PIN CONFIG ==================
 #define ADC_PIN 34
